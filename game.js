@@ -463,6 +463,24 @@ function endGame(winner, reason) {
   $("winner-img").src = PIECE_IMG[winner];
   $("winner-reason").textContent = reason;
   showScreen("gameover");
+  spawnConfetti();
+}
+
+// 勝利演出：紙吹雪を舞わせる
+function spawnConfetti() {
+  const box = $("confetti");
+  box.innerHTML = "";
+  const colors = ["#ff6b81", "#3b9dff", "#ffd23f", "#5bbf4a", "#ff8a3d", "#a06bff"];
+  for (let i = 0; i < 44; i++) {
+    const c = document.createElement("span");
+    c.className = "confetti-piece";
+    c.style.left = Math.random() * 100 + "%";
+    c.style.background = colors[i % colors.length];
+    c.style.animationDelay = (Math.random() * 0.7).toFixed(2) + "s";
+    c.style.animationDuration = (1.6 + Math.random() * 1.4).toFixed(2) + "s";
+    if (i % 2) c.style.borderRadius = "50%";
+    box.appendChild(c);
+  }
 }
 
 /* ---------- 初期バインド ---------- */
