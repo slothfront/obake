@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ガイスター (Geister)</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div id="app">
+    <header>
+      <h1>👻 ガイスター</h1>
+      <p class="subtitle">2人対戦（同一画面・ホットシート）</p>
+    </header>
+
+    <!-- タイトル / メニュー画面 -->
+    <section id="screen-title" class="screen">
+      <div class="card">
+        <h2>あそびかた</h2>
+        <ul class="rules">
+          <li>6×6 の盤で対戦します。各プレイヤーは <b>青（良いオバケ）4体</b> と <b>赤（悪いオバケ）4体</b> を持ちます。</li>
+          <li>自分のコマの色だけが分かり、相手のコマの色は分かりません（捕獲すると判明します）。</li>
+          <li>1手ごとに、自分のコマ1体を上下左右に1マス動かします。相手コマに進入すると捕獲します。</li>
+          <li><b>勝利条件（いずれか）</b>
+            <ol>
+              <li>相手の<b>青</b>を4体すべて捕獲する</li>
+              <li>自分の<b>赤</b>を4体すべて捕獲させる（相手に取らせる）</li>
+              <li>自分の<b>青</b>を、相手陣の左右いずれかの<b>隅</b>から盤外へ脱出させる</li>
+            </ol>
+          </li>
+        </ul>
+
+        <label class="toggle">
+          <input type="checkbox" id="privacy-toggle" checked />
+          プライバシーモード（手番交代時に画面を隠す）
+        </label>
+
+        <button id="btn-start" class="primary">ゲーム開始（コマ配置へ）</button>
+      </div>
+    </section>
+
+    <!-- 配置フェーズ -->
+    <section id="screen-setup" class="screen hidden">
+      <div class="card">
+        <h2 id="setup-title">プレイヤー1：コマを配置</h2>
+        <p class="hint">
+          自陣のコマをクリックして <b>青（良いオバケ）</b> にするコマを選びます。<br />
+          青をちょうど <b>4体</b> 選んでください。残りは自動的に赤になります。
+        </p>
+        <p class="counter">青オバケ：<span id="setup-blue-count">0</span> / 4</p>
+        <div id="setup-board" class="board"></div>
+        <div class="legend">
+          <span><span class="dot blue"></span>青（良い・脱出できる）</span>
+          <span><span class="dot red"></span>赤（悪い）</span>
+        </div>
+        <button id="btn-setup-confirm" class="primary" disabled>この配置で確定</button>
+      </div>
+    </section>
+
+    <!-- 手番交代（目隠し）画面 -->
+    <section id="screen-handoff" class="screen hidden">
+      <div class="card center">
+        <h2 id="handoff-title">端末を渡してください</h2>
+        <p id="handoff-text" class="big"></p>
+        <button id="btn-handoff" class="primary">準備OK・はじめる</button>
+      </div>
+    </section>
+
+    <!-- 対局画面 -->
+    <section id="screen-play" class="screen hidden">
+      <div id="status-bar">
+        <span id="turn-indicator"></span>
+        <span id="play-message"></span>
+      </div>
+
+      <div class="play-area">
+        <div class="tray" id="tray-p2">
+          <h3>プレイヤー2 が失ったコマ</h3>
+          <div class="captured-pieces" id="captured-p2"></div>
+        </div>
+
+        <div id="play-board" class="board"></div>
+
+        <div class="tray" id="tray-p1">
+          <h3>プレイヤー1 が失ったコマ</h3>
+          <div class="captured-pieces" id="captured-p1"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 終了画面 -->
+    <section id="screen-gameover" class="screen hidden">
+      <div class="card center">
+        <h2 id="winner-title"></h2>
+        <p id="winner-reason" class="big"></p>
+        <button id="btn-replay" class="primary">もう一度あそぶ</button>
+      </div>
+    </section>
+  </div>
+
+  <script src="game.js"></script>
+</body>
+</html>
