@@ -286,6 +286,15 @@ function renderPlay() {
   }
 
   const cells = makeBoard($("play-board"));
+
+  // 手番プレイヤーの脱出口を矢印付きで強調し、相手用の隅と区別する
+  ESCAPE_SQUARES[viewer].forEach((s) => {
+    cells[s.row][s.col].classList.add("my-exit", s.row === 0 ? "exit-up" : "exit-down");
+  });
+  ESCAPE_SQUARES[opponent(viewer)].forEach((s) => {
+    cells[s.row][s.col].classList.add("foe-exit");
+  });
+
   const selectedPiece = state.selected != null
     ? state.pieces.find((p) => p.id === state.selected)
     : null;
@@ -332,9 +341,13 @@ function renderPlay() {
   // 脱出ボタン（選択中の青コマが脱出マスにいるとき表示）
   const escapeBanner = $("escape-banner");
   if (selectedPiece && canEscape) {
-    $("play-message").textContent = "脱出できます！下のボタンか、このコマをもう一度タップ";
+    $("play-message").textContent = "脱出できます！下のボタン・このマス・コマのどれでもOK";
     escapeBanner.classList.remove("hidden");
     $("btn-escape").onclick = () => doEscape(selectedPiece);
+    // 当該の隅マス自体も脱出のクリック対象にする（当たり判定を広げる）
+    const exitCell = cells[selectedPiece.row][selectedPiece.col];
+    exitCell.classList.add("escape-ready");
+    exitCell.addEventListener("click", () => doEscape(selectedPiece));
   } else {
     escapeBanner.classList.add("hidden");
     $("btn-escape").onclick = null;
