@@ -287,20 +287,25 @@ button.primary:hover:not(:disabled) { filter: brightness(1.08); }
   background: transparent; box-shadow: none;
 }
 .piece.memory .ghost { opacity: 0.18; filter: grayscale(1); }
-.piece.memory.owner1 {
-  border-color: #2de2e6;
-  box-shadow: 0 0 10px rgba(45,226,230,0.55), inset 0 0 8px rgba(45,226,230,0.25);
+.piece.memory .num { color: #dfe7ef; }
+/* 所有者は「色相」ではなく「明るさ」で区別する（青/赤の良い悪いと取り違えないため）。
+   手番側=白く発光 / 相手側=暗くグレー。両者とも青・赤に似た色を使わない。 */
+.piece.memory.own {
+  border-color: #eef5fb;
+  box-shadow: 0 0 10px rgba(238,245,251,0.5), inset 0 0 8px rgba(238,245,251,0.2);
 }
-.piece.memory.owner1 .num { color: #7ff7fb; text-shadow: 0 0 8px rgba(45,226,230,0.9); }
-.piece.memory.owner2 {
-  border-color: #ff5da2;
-  box-shadow: 0 0 10px rgba(255,93,162,0.55), inset 0 0 8px rgba(255,93,162,0.25);
+.piece.memory.own .num { color: #ffffff; text-shadow: 0 0 8px rgba(238,245,251,0.9); }
+.piece.memory.foe {
+  opacity: 0.5;
+  border-color: rgba(255,255,255,0.14);
+  box-shadow: none;
 }
-.piece.memory.owner2 .num { color: #ffaad2; text-shadow: 0 0 8px rgba(255,93,162,0.9); }
-.piece.memory.foe { opacity: 0.72; }
+.piece.memory.foe .num { color: #aeb6c2; }
 .piece.memory.selected { outline: none; }
-.piece.memory.selected.owner1 { box-shadow: 0 0 16px 3px #2de2e6, inset 0 0 10px rgba(45,226,230,0.4); }
-.piece.memory.selected.owner2 { box-shadow: 0 0 16px 3px #ff5da2, inset 0 0 10px rgba(255,93,162,0.4); }
+.piece.memory.selected.own {
+  border-color: #ffffff;
+  box-shadow: 0 0 16px 3px rgba(230,242,250,0.95), inset 0 0 10px rgba(230,242,250,0.4);
+}
 
 /* 記憶画面の盤面では色を見せる（番号付き） */
 .board.memory .piece .num {
@@ -339,8 +344,8 @@ button.primary:hover:not(:disabled) { filter: brightness(1.08); }
 #btn-peek:active { background: rgba(45,226,230,0.32); }
 
 /* ---- 手番表示のアクセント ---- */
-#turn-indicator.turn-p1 { color: #7ff7fb; text-shadow: 0 0 10px rgba(45,226,230,0.5); }
-#turn-indicator.turn-p2 { color: #ffaad2; text-shadow: 0 0 10px rgba(255,93,162,0.5); }
+#turn-indicator.turn-p1 { color: #eaf2ff; text-shadow: 0 0 10px rgba(220,235,255,0.5); }
+#turn-indicator.turn-p2 { color: #ffd87a; text-shadow: 0 0 10px rgba(255,200,90,0.45); }
 
 @media (max-width: 480px) {
   :root { --cell: 50px; }

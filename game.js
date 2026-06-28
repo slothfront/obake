@@ -106,11 +106,12 @@ function ghostSpan() {
   return g;
 }
 
-// opts: { reveal:bool, ring:bool }
+// opts: { reveal:bool }
 //  reveal=true  → 色を表示（自分のコマ / 配置 / 記憶画面 / 捕獲済み）
 //  reveal=false → 色を隠す。memoryモードは番号トークン、通常モードは「?」
+//  記憶モードの所有者区別は呼び出し側で own/foe クラスにより明るさで表現する
 function makePieceEl(piece, opts = {}) {
-  const { reveal = false, ring = false } = opts;
+  const { reveal = false } = opts;
   const el = document.createElement("div");
   el.className = "piece";
   if (reveal) {
@@ -122,7 +123,6 @@ function makePieceEl(piece, opts = {}) {
   } else {
     el.classList.add("unknown");
   }
-  if (ring) el.classList.add("owner" + piece.owner);
   // 番号バッジ
   const badge = document.createElement("span");
   badge.className = "num";
@@ -286,7 +286,7 @@ function renderPlay() {
     // 通常: 自分のコマだけ色が見える
     // 記憶: 双方とも色を隠す（番号のみ）。ただし確認中(peek)は自分の色のみ表示
     const reveal = memory ? state.peek && p.owner === viewer : p.owner === viewer;
-    const el = makePieceEl(p, { reveal, ring: memory });
+    const el = makePieceEl(p, { reveal });
     if (memory && p.owner !== viewer) el.classList.add("foe");
     const cell = cells[p.row][p.col];
     const isSelected = selectedPiece && p.id === selectedPiece.id;
