@@ -23,6 +23,7 @@ const PLAYER_NAME = { 1: "プレイヤー1", 2: "プレイヤー2" };
 const state = {
   privacy: true,
   mode: "normal",      // "normal"（目隠し交代） | "memory"（番号で記憶）
+  peek: false,         // 記憶モードで自分の色を一時表示中か
   pieces: [],          // {id, owner, num, color, row, col, captured}
   current: 1,          // 手番のプレイヤー
   selected: null,      // 選択中のコマid（対局中）
@@ -256,6 +257,7 @@ function onHandoffContinue() {
 
 function startPlay() {
   state.selected = null;
+  state.peek = false;
   showScreen("play");
   renderPlay();
 }
@@ -275,11 +277,15 @@ function renderPlay() {
   const moves = selectedPiece ? legalMoves(selectedPiece) : [];
   const canEscape = moves.some((m) => m.escape);
 
-  // コマ配置
+  // 記憶モード用の確認ボタン表示切替
   const memory = state.mode === "memory";
+  $("play-controls").classList.toggle("hidden", !memory);
+
+  // コマ配置
   activePieces().forEach((p) => {
-    // 通常: 自分のコマだけ色が見える / 記憶: 双方とも色を隠す（番号のみ）
-    const reveal = memory ? false : p.owner === viewer;
+    // 通常: 自分のコマだけ色が見える
+    // 記憶: 双方とも色を隠す（番号のみ）。ただし確認中(peek)は自分の色のみ表示
+    const reveal = memory ? state.peek && p.owner === viewer : p.owner === viewer;
     const el = makePieceEl(p, { reveal, ring: memory });
     if (memory && p.owner !== viewer) el.classList.add("foe");
     const cell = cells[p.row][p.col];
@@ -432,6 +438,21 @@ function bind() {
   document.querySelectorAll('input[name="mode"]').forEach((r) =>
     r.addEventListener("change", syncPrivacyRow)
   );
+
+  // 記憶モード: 押している間だけ自分のコマの色を表示
+  const peekBtn = $("btn-peek");
+  const startPeek = (e) => {
+    e.preventDefault();
+    if (state.mode === "memory" && !state.peek) { state.peek = true; renderPlay(); }
+  };
+  const endPeek = () => { if (state.peek) { state.peek = false; renderPlay(); } };
+  peekBtn.addEventListener("pointerdown", startPeek);
+  peekBtn.addEventListener("pointerup", endPeek);
+  peekBtn.addEventListener("pointerleave", endPeek);
+  peekBtn.addEventListener("pointercancel", endPeek);
+  peekBtn.addEventListener("contextmenu", (e) => e.preventDefault());
+  window.addEventListener("pointerup", endPeek);
+  window.addEventListener("blur", endPeek);
   $("btn-replay").addEventListener("click", () => {
     state.capturedFrom = { 1: [], 2: [] };
     state.winner = null;
