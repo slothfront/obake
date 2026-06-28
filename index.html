@@ -4,12 +4,12 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>ガイスター (Geister)</title>
-  <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="styles.css?v=2" />
 </head>
 <body>
   <div id="app">
     <header>
-      <h1>👻 ガイスター</h1>
+      <h1>🧺 ピクニック・ガイスター</h1>
       <p class="subtitle">2人対戦（同一画面・ホットシート）</p>
     </header>
 
@@ -18,7 +18,7 @@
       <div class="card">
         <h2>あそびかた</h2>
         <ul class="rules">
-          <li>6×6 の盤で対戦します。各プレイヤーは <b>青（良いオバケ）4体</b> と <b>赤（悪いオバケ）4体</b> を持ちます。</li>
+          <li>6×6 の盤で対戦します。各プレイヤーは <b>青（良いコマ）4体</b> と <b>赤（悪いコマ）4体</b> を持ちます（コマの絵柄はプレイヤーごとに異なります）。</li>
           <li>自分のコマの色だけが分かり、相手のコマの色は分かりません（捕獲すると判明します）。</li>
           <li>1手ごとに、自分のコマ1体を上下左右に1マス動かします。相手コマに進入すると捕獲します。</li>
           <li><b>勝利条件（いずれか）</b>
@@ -62,10 +62,10 @@
       <div class="card">
         <h2 id="setup-title">プレイヤー1：コマを配置</h2>
         <p class="hint">
-          自陣のコマをクリックして <b>青（良いオバケ）</b> にするコマを選びます。<br />
+          自陣のコマをクリックして <b>青（良いコマ）</b> にするコマを選びます。<br />
           青をちょうど <b>4体</b> 選んでください。残りは自動的に赤になります。
         </p>
-        <p class="counter">青オバケ：<span id="setup-blue-count">0</span> / 4</p>
+        <p class="counter">青のコマ：<span id="setup-blue-count">0</span> / 4</p>
         <div id="setup-board" class="board"></div>
         <div class="legend">
           <span><span class="dot blue"></span>青（良い・脱出できる）</span>
@@ -137,6 +137,6 @@
     </section>
   </div>
 
-  <script src="game.js"></script>
+  <script src="game.js?v=2"></script>
 </body>
 </html>

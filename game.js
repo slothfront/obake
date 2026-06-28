@@ -24,7 +24,7 @@ const state = {
   privacy: true,
   mode: "normal",      // "normal"（目隠し交代） | "memory"（番号で記憶）
   peek: false,         // 記憶モードで自分の色を一時表示中か
-  pieces: [],          // {id, owner, num, color, row, col, captured}
+  pieces: [],          // {id, owner, num, color, row, col, captured, facing}
   current: 1,          // 手番のプレイヤー
   selected: null,      // 選択中のコマid（対局中）
   setupPlayer: 1,      // 配置中のプレイヤー
@@ -65,16 +65,16 @@ function initPieces() {
   state.pieces = [];
   let id = 0;
   const num = { 1: 1, 2: 1 }; // プレイヤーごとに 1〜8 の番号を振る
-  // プレイヤー1: 下2行 (row 5, 4)
+  // プレイヤー1: 下2行 (row 5, 4) → 相手側(上)を向く
   for (const row of [5, 4]) {
     for (const col of HOME_COLS) {
-      state.pieces.push({ id: id++, owner: 1, num: num[1]++, color: "red", row, col, captured: false });
+      state.pieces.push({ id: id++, owner: 1, num: num[1]++, color: "red", row, col, captured: false, facing: "up" });
     }
   }
-  // プレイヤー2: 上2行 (row 0, 1)
+  // プレイヤー2: 上2行 (row 0, 1) → 相手側(下)を向く
   for (const row of [0, 1]) {
     for (const col of HOME_COLS) {
-      state.pieces.push({ id: id++, owner: 2, num: num[2]++, color: "red", row, col, captured: false });
+      state.pieces.push({ id: id++, owner: 2, num: num[2]++, color: "red", row, col, captured: false, facing: "down" });
     }
   }
 }
@@ -99,35 +99,50 @@ function makeBoard(container) {
   return cells;
 }
 
-function ghostSpan() {
-  const g = document.createElement("span");
-  g.className = "ghost";
-  g.textContent = "👻";
-  return g;
+// プレイヤーごとのコマ画像（所有者は公開情報なので常に表示）
+const PIECE_IMG = { 1: "assets/piece-a.png", 2: "assets/piece-b.png" };
+
+function avatarSpan(piece) {
+  const w = document.createElement("span");
+  w.className = "avatar";
+  const img = document.createElement("img");
+  img.src = PIECE_IMG[piece.owner];
+  img.alt = "";
+  img.draggable = false;
+  w.appendChild(img);
+  return w;
 }
 
-// opts: { reveal:bool, ring:bool }
-//  reveal=true  → 色を表示（自分のコマ / 配置 / 記憶画面 / 捕獲済み）
+// opts: { reveal:bool }
+//  reveal=true  → 良い/悪いの色(青/赤)を枠色で表示（自分のコマ / 配置 / 記憶画面 / 捕獲済み）
 //  reveal=false → 色を隠す。memoryモードは番号トークン、通常モードは「?」
+//  アバター画像（所有者）は常に表示。記憶モードの所有者区別は own/foe で明るさ表現する
 function makePieceEl(piece, opts = {}) {
-  const { reveal = false, ring = false } = opts;
+  const { reveal = false } = opts;
   const el = document.createElement("div");
-  el.className = "piece";
-  if (reveal) {
-    el.classList.add(piece.color);
-    el.appendChild(ghostSpan());
-  } else if (state.mode === "memory") {
-    el.classList.add("memory");
-    el.appendChild(ghostSpan());
-  } else {
-    el.classList.add("unknown");
-  }
-  if (ring) el.classList.add("owner" + piece.owner);
+  el.className = "piece face-" + (piece.facing || "up");
+  if (reveal) el.classList.add(piece.color);
+  else if (state.mode === "memory") el.classList.add("memory");
+  else el.classList.add("unknown");
+
+  el.appendChild(avatarSpan(piece));
+
+  // 進行方向を示すポインタ
+  const snout = document.createElement("span");
+  snout.className = "snout";
+  el.appendChild(snout);
   // 番号バッジ
   const badge = document.createElement("span");
   badge.className = "num";
   badge.textContent = piece.num;
   el.appendChild(badge);
+  // 通常モードで相手の色が不明なことを示す「?」
+  if (!reveal && state.mode !== "memory") {
+    const q = document.createElement("span");
+    q.className = "qmark";
+    q.textContent = "?";
+    el.appendChild(q);
+  }
   return el;
 }
 
@@ -286,7 +301,7 @@ function renderPlay() {
     // 通常: 自分のコマだけ色が見える
     // 記憶: 双方とも色を隠す（番号のみ）。ただし確認中(peek)は自分の色のみ表示
     const reveal = memory ? state.peek && p.owner === viewer : p.owner === viewer;
-    const el = makePieceEl(p, { reveal, ring: memory });
+    const el = makePieceEl(p, { reveal });
     if (memory && p.owner !== viewer) el.classList.add("foe");
     const cell = cells[p.row][p.col];
     const isSelected = selectedPiece && p.id === selectedPiece.id;
@@ -368,6 +383,13 @@ function doMove(piece, move) {
     capturedColor = occupant.color;
     state.capturedFrom[occupant.owner].push({ color: occupant.color, num: occupant.num });
   }
+  // 進行方向にコマを向ける
+  const dr = move.row - piece.row;
+  const dc = move.col - piece.col;
+  if (dr < 0) piece.facing = "up";
+  else if (dr > 0) piece.facing = "down";
+  else if (dc < 0) piece.facing = "left";
+  else if (dc > 0) piece.facing = "right";
   piece.row = move.row;
   piece.col = move.col;
   state.selected = null;
@@ -380,11 +402,11 @@ function doMove(piece, move) {
     const redLost = state.capturedFrom[victim].filter((c) => c.color === "red").length;
     if (blueLost >= 4) {
       // 取った側が相手の青を全部取った → 取った側の勝ち
-      return endGame(taker, "相手の青オバケを4体すべて捕獲しました。");
+      return endGame(taker, "相手の青いコマを4体すべて捕獲しました。");
     }
     if (redLost >= 4) {
       // 取られた側の赤が全部取られた → 取られた側の勝ち
-      return endGame(victim, PLAYER_NAME[taker] + " に赤オバケを4体すべて取らせました。");
+      return endGame(victim, PLAYER_NAME[taker] + " に赤いコマを4体すべて取らせました。");
     }
   }
 
@@ -394,7 +416,7 @@ function doMove(piece, move) {
 function doEscape(piece) {
   piece.captured = true; // 盤外へ
   state.selected = null;
-  endGame(piece.owner, "青オバケが相手陣の隅から脱出しました。");
+  endGame(piece.owner, "青いコマが相手陣の隅から脱出しました。");
 }
 
 function nextTurn() {
