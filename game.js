@@ -462,9 +462,28 @@ function endGame(winner, reason) {
   $("winner-title").textContent = "🎉 " + PLAYER_NAME[winner] + " の勝ち！";
   $("winner-img").src = PIECE_IMG[winner];
   $("winner-reason").textContent = reason;
+  $("winner-speech").textContent = WINNER_LINES[Math.floor(Math.random() * WINNER_LINES.length)];
   showScreen("gameover");
   spawnConfetti();
 }
+
+// 赤ちゃんが言わなそうな、大人びた勝利コメント（ランダムで表示）
+const WINNER_LINES = [
+  "がんばったね！",
+  "すごいじゃん！",
+  "頭脳戦だったね",
+  "序盤が鍵だったね",
+  "最後押し切ったね",
+  "完璧な読みだったよ",
+  "ナイス判断！",
+  "中盤の一手が効いたね",
+  "ブラフが見事に決まったね",
+  "冷静沈着、お見事",
+  "終始リードしてたね",
+  "プレッシャーに強いね",
+  "実力差が出たかな",
+  "文句なしの勝利だ",
+];
 
 // 勝利演出：紙吹雪を舞わせる
 function spawnConfetti() {
