@@ -30,9 +30,27 @@
           </li>
         </ul>
 
-        <label class="toggle">
+        <h2 class="mode-heading">モードを選ぶ</h2>
+        <div class="mode-select">
+          <label class="mode-card">
+            <input type="radio" name="mode" value="normal" checked />
+            <span class="mode-body">
+              <span class="mode-name">通常モード</span>
+              <span class="mode-desc">手番交代のたびに目隠し画面を挟み、相手にコマの色を見せません。</span>
+            </span>
+          </label>
+          <label class="mode-card neon">
+            <input type="radio" name="mode" value="memory" />
+            <span class="mode-body">
+              <span class="mode-name">記憶モード <span class="badge-cool">COOL</span></span>
+              <span class="mode-desc">コマに番号を振り、対局中は色を一切表示しません。自分の番号と色を<b>記憶</b>して戦うので、手番ごとの目隠しが不要です。</span>
+            </span>
+          </label>
+        </div>
+
+        <label class="toggle" id="privacy-row">
           <input type="checkbox" id="privacy-toggle" checked />
-          プライバシーモード（手番交代時に画面を隠す）
+          通常モードで目隠し画面を使う
         </label>
 
         <button id="btn-start" class="primary">ゲーム開始（コマ配置へ）</button>
@@ -57,6 +75,23 @@
       </div>
     </section>
 
+    <!-- 記憶（暗記）画面：記憶モード専用 -->
+    <section id="screen-memorize" class="screen hidden">
+      <div class="card center">
+        <h2 id="memorize-title">番号を記憶してください</h2>
+        <p class="hint">
+          対局中はコマの色が表示されず<b>番号だけ</b>になります。<br />
+          どの番号が <b>青（良い）</b> で、どの番号が <b>赤（悪い）</b> かを覚えてください。
+        </p>
+        <div id="memorize-board" class="board memory"></div>
+        <div class="memo-summary">
+          <div class="memo-team blue"><span class="lbl">青（良い）</span><span class="nums" id="memo-blue"></span></div>
+          <div class="memo-team red"><span class="lbl">赤（悪い）</span><span class="nums" id="memo-red"></span></div>
+        </div>
+        <button id="btn-memorized" class="primary">覚えた！</button>
+      </div>
+    </section>
+
     <!-- 手番交代（目隠し）画面 -->
     <section id="screen-handoff" class="screen hidden">
       <div class="card center">
@@ -71,6 +106,10 @@
       <div id="status-bar">
         <span id="turn-indicator"></span>
         <span id="play-message"></span>
+      </div>
+
+      <div id="play-controls" class="hidden">
+        <button id="btn-peek" type="button">🔍 自分のコマの色を確認（押している間だけ表示）</button>
       </div>
 
       <div class="play-area">

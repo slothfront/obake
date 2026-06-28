@@ -22,7 +22,9 @@ const PLAYER_NAME = { 1: "プレイヤー1", 2: "プレイヤー2" };
 
 const state = {
   privacy: true,
-  pieces: [],          // {id, owner, color, row, col, captured}
+  mode: "normal",      // "normal"（目隠し交代） | "memory"（番号で記憶）
+  peek: false,         // 記憶モードで自分の色を一時表示中か
+  pieces: [],          // {id, owner, num, color, row, col, captured}
   current: 1,          // 手番のプレイヤー
   selected: null,      // 選択中のコマid（対局中）
   setupPlayer: 1,      // 配置中のプレイヤー
@@ -62,16 +64,17 @@ function isAnyEscapeSquare(row, col) {
 function initPieces() {
   state.pieces = [];
   let id = 0;
+  const num = { 1: 1, 2: 1 }; // プレイヤーごとに 1〜8 の番号を振る
   // プレイヤー1: 下2行 (row 5, 4)
   for (const row of [5, 4]) {
     for (const col of HOME_COLS) {
-      state.pieces.push({ id: id++, owner: 1, color: "red", row, col, captured: false });
+      state.pieces.push({ id: id++, owner: 1, num: num[1]++, color: "red", row, col, captured: false });
     }
   }
   // プレイヤー2: 上2行 (row 0, 1)
   for (const row of [0, 1]) {
     for (const col of HOME_COLS) {
-      state.pieces.push({ id: id++, owner: 2, color: "red", row, col, captured: false });
+      state.pieces.push({ id: id++, owner: 2, num: num[2]++, color: "red", row, col, captured: false });
     }
   }
 }
@@ -103,21 +106,40 @@ function ghostSpan() {
   return g;
 }
 
-function makePieceEl(piece, reveal) {
+// opts: { reveal:bool, ring:bool }
+//  reveal=true  → 色を表示（自分のコマ / 配置 / 記憶画面 / 捕獲済み）
+//  reveal=false → 色を隠す。memoryモードは番号トークン、通常モードは「?」
+function makePieceEl(piece, opts = {}) {
+  const { reveal = false, ring = false } = opts;
   const el = document.createElement("div");
   el.className = "piece";
   if (reveal) {
     el.classList.add(piece.color);
     el.appendChild(ghostSpan());
+  } else if (state.mode === "memory") {
+    el.classList.add("memory");
+    el.appendChild(ghostSpan());
   } else {
     el.classList.add("unknown");
   }
+  if (ring) el.classList.add("owner" + piece.owner);
+  // 番号バッジ
+  const badge = document.createElement("span");
+  badge.className = "num";
+  badge.textContent = piece.num;
+  el.appendChild(badge);
   return el;
 }
 
 /* ---------- 配置フェーズ ---------- */
 
+function selectedMode() {
+  const checked = document.querySelector('input[name="mode"]:checked');
+  return checked ? checked.value : "normal";
+}
+
 function startSetup() {
+  state.mode = selectedMode();
   state.privacy = $("privacy-toggle").checked;
   initPieces();
   state.setupPlayer = 1;
@@ -138,7 +160,7 @@ function renderSetup() {
   const cells = makeBoard($("setup-board"));
   state.pieces.filter((p) => p.owner === player).forEach((p) => {
     const cell = cells[p.row][p.col];
-    const el = makePieceEl(p, true);
+    const el = makePieceEl(p, { reveal: true });
     el.classList.add("own");
     el.addEventListener("click", () => toggleSetupColor(p));
     cell.classList.add("selectable");
@@ -164,6 +186,11 @@ function toggleSetupColor(piece) {
 }
 
 function confirmSetup() {
+  if (state.mode === "memory") {
+    // 記憶モード: 暗記画面を挟む
+    showMemorize(state.setupPlayer);
+    return;
+  }
   if (state.setupPlayer === 1) {
     // プレイヤー2の配置へ（目隠しを挟む）
     runHandoff(2, "コマを配置します", () => enterSetupFor(2));
@@ -171,6 +198,39 @@ function confirmSetup() {
     // 対局開始
     state.current = 1;
     runHandoff(1, "あなたの手番です", startPlay);
+  }
+}
+
+/* ---------- 記憶（暗記）画面：記憶モード専用 ---------- */
+
+function showMemorize(player) {
+  const mine = state.pieces.filter((p) => p.owner === player);
+  $("memorize-title").textContent = PLAYER_NAME[player] + "：番号を記憶してください";
+
+  const cells = makeBoard($("memorize-board"));
+  mine.forEach((p) => {
+    cells[p.row][p.col].appendChild(makePieceEl(p, { reveal: true }));
+  });
+
+  const fmt = (color) =>
+    mine
+      .filter((p) => p.color === color)
+      .map((p) => p.num)
+      .sort((a, b) => a - b)
+      .join("　");
+  $("memo-blue").textContent = fmt("blue");
+  $("memo-red").textContent = fmt("red");
+
+  showScreen("memorize");
+}
+
+function onMemorized() {
+  if (state.setupPlayer === 1) {
+    runHandoff(2, "コマを配置します", () => enterSetupFor(2));
+  } else {
+    state.current = 1;
+    // 記憶モードでは対局中の目隠しは不要。端末を最初の手番者に戻すだけ。
+    runHandoff(1, "対局開始！番号で記憶して戦おう", startPlay);
   }
 }
 
@@ -197,6 +257,7 @@ function onHandoffContinue() {
 
 function startPlay() {
   state.selected = null;
+  state.peek = false;
   showScreen("play");
   renderPlay();
 }
@@ -204,6 +265,7 @@ function startPlay() {
 function renderPlay() {
   const viewer = state.current; // 手番のプレイヤーの視点
   $("turn-indicator").textContent = PLAYER_NAME[state.current] + " の手番";
+  $("turn-indicator").className = "turn-p" + state.current;
   if (!state.selected) {
     $("play-message").textContent = "動かすコマを選んでください";
   }
@@ -215,10 +277,17 @@ function renderPlay() {
   const moves = selectedPiece ? legalMoves(selectedPiece) : [];
   const canEscape = moves.some((m) => m.escape);
 
+  // 記憶モード用の確認ボタン表示切替
+  const memory = state.mode === "memory";
+  $("play-controls").classList.toggle("hidden", !memory);
+
   // コマ配置
   activePieces().forEach((p) => {
-    const reveal = p.owner === viewer; // 自分のコマだけ色が見える
-    const el = makePieceEl(p, reveal);
+    // 通常: 自分のコマだけ色が見える
+    // 記憶: 双方とも色を隠す（番号のみ）。ただし確認中(peek)は自分の色のみ表示
+    const reveal = memory ? state.peek && p.owner === viewer : p.owner === viewer;
+    const el = makePieceEl(p, { reveal, ring: memory });
+    if (memory && p.owner !== viewer) el.classList.add("foe");
     const cell = cells[p.row][p.col];
     const isSelected = selectedPiece && p.id === selectedPiece.id;
     if (isSelected) el.classList.add("selected");
@@ -256,10 +325,10 @@ function renderCaptured() {
   for (const player of [1, 2]) {
     const box = $("captured-p" + player);
     box.innerHTML = "";
-    state.capturedFrom[player].forEach((color) => {
+    state.capturedFrom[player].forEach((c) => {
       const mini = document.createElement("div");
-      mini.className = "mini " + color;
-      mini.textContent = "👻";
+      mini.className = "mini " + c.color;
+      mini.textContent = c.num;
       box.appendChild(mini);
     });
   }
@@ -297,7 +366,7 @@ function doMove(piece, move) {
   if (occupant) {
     occupant.captured = true;
     capturedColor = occupant.color;
-    state.capturedFrom[occupant.owner].push(occupant.color);
+    state.capturedFrom[occupant.owner].push({ color: occupant.color, num: occupant.num });
   }
   piece.row = move.row;
   piece.col = move.col;
@@ -307,8 +376,8 @@ function doMove(piece, move) {
   if (capturedColor) {
     const victim = occupant.owner; // 取られた側
     const taker = piece.owner;
-    const blueLost = state.capturedFrom[victim].filter((c) => c === "blue").length;
-    const redLost = state.capturedFrom[victim].filter((c) => c === "red").length;
+    const blueLost = state.capturedFrom[victim].filter((c) => c.color === "blue").length;
+    const redLost = state.capturedFrom[victim].filter((c) => c.color === "red").length;
     if (blueLost >= 4) {
       // 取った側が相手の青を全部取った → 取った側の勝ち
       return endGame(taker, "相手の青オバケを4体すべて捕獲しました。");
@@ -331,6 +400,12 @@ function doEscape(piece) {
 function nextTurn() {
   state.current = opponent(state.current);
   state.selected = null;
+  if (state.mode === "memory") {
+    // 記憶モードは盤上に色が出ないので目隠し不要。そのまま手番交代。
+    showScreen("play");
+    renderPlay();
+    return;
+  }
   runHandoff(state.current, "あなたの手番です", () => {
     showScreen("play");
     renderPlay();
@@ -349,15 +424,41 @@ function endGame(winner, reason) {
 
 /* ---------- 初期バインド ---------- */
 
+function syncPrivacyRow() {
+  // 記憶モードでは目隠しトグルは無効
+  $("privacy-row").style.opacity = selectedMode() === "memory" ? "0.4" : "1";
+  $("privacy-toggle").disabled = selectedMode() === "memory";
+}
+
 function bind() {
   $("btn-start").addEventListener("click", startSetup);
   $("btn-setup-confirm").addEventListener("click", confirmSetup);
   $("btn-handoff").addEventListener("click", onHandoffContinue);
+  $("btn-memorized").addEventListener("click", onMemorized);
+  document.querySelectorAll('input[name="mode"]').forEach((r) =>
+    r.addEventListener("change", syncPrivacyRow)
+  );
+
+  // 記憶モード: 押している間だけ自分のコマの色を表示
+  const peekBtn = $("btn-peek");
+  const startPeek = (e) => {
+    e.preventDefault();
+    if (state.mode === "memory" && !state.peek) { state.peek = true; renderPlay(); }
+  };
+  const endPeek = () => { if (state.peek) { state.peek = false; renderPlay(); } };
+  peekBtn.addEventListener("pointerdown", startPeek);
+  peekBtn.addEventListener("pointerup", endPeek);
+  peekBtn.addEventListener("pointerleave", endPeek);
+  peekBtn.addEventListener("pointercancel", endPeek);
+  peekBtn.addEventListener("contextmenu", (e) => e.preventDefault());
+  window.addEventListener("pointerup", endPeek);
+  window.addEventListener("blur", endPeek);
   $("btn-replay").addEventListener("click", () => {
     state.capturedFrom = { 1: [], 2: [] };
     state.winner = null;
     showScreen("title");
   });
+  syncPrivacyRow();
   showScreen("title");
 }
 
