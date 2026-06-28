@@ -254,6 +254,24 @@ button.primary:active:not(:disabled) { transform: translateY(5px); box-shadow: 0
 
 #play-controls { text-align: center; margin: 8px 0 2px; }
 #play-controls.hidden { display: none; }
+
+#escape-banner { text-align: center; margin: 6px 0; }
+#escape-banner.hidden { display: none; }
+#btn-escape {
+  width: 100%;
+  font-size: 1.05rem;
+  padding: 14px;
+  color: #6b4a05;
+  background: linear-gradient(#ffe06a, var(--escape-y));
+  /* transform は使わない（ボタンを静止させ確実にタップできるようにするため）。
+     注意を引く脈動は光るリングのみで表現する。 */
+  animation: pulse-ring 0.9s ease-in-out infinite alternate;
+}
+#btn-escape:active { filter: brightness(1.05); }
+@keyframes pulse-ring {
+  from { box-shadow: 0 6px 0 #d9a400, 0 0 0 0 rgba(255, 210, 63, 0.7); }
+  to   { box-shadow: 0 6px 0 #d9a400, 0 0 0 10px rgba(255, 210, 63, 0); }
+}
 #btn-peek {
   font-size: 0.85rem; padding: 9px 16px;
   background: #fff; color: var(--accent2-d);
