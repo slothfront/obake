@@ -329,8 +329,15 @@ function renderPlay() {
     cell.addEventListener("click", () => doMove(selectedPiece, m));
   });
 
+  // 脱出ボタン（選択中の青コマが脱出マスにいるとき表示）
+  const escapeBanner = $("escape-banner");
   if (selectedPiece && canEscape) {
-    $("play-message").textContent = "移動先を選択（このコマをクリックで脱出）";
+    $("play-message").textContent = "脱出できます！下のボタンか、このコマをもう一度タップ";
+    escapeBanner.classList.remove("hidden");
+    $("btn-escape").onclick = () => doEscape(selectedPiece);
+  } else {
+    escapeBanner.classList.add("hidden");
+    $("btn-escape").onclick = null;
   }
 
   renderCaptured();
