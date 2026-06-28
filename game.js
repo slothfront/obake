@@ -447,6 +447,7 @@ function endGame(winner, reason) {
   state.winner = winner;
   state.reason = reason;
   $("winner-title").textContent = "🎉 " + PLAYER_NAME[winner] + " の勝ち！";
+  $("winner-img").src = PIECE_IMG[winner];
   $("winner-reason").textContent = reason;
   showScreen("gameover");
 }
