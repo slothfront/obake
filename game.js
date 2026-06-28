@@ -353,6 +353,20 @@ function renderPlay() {
     $("btn-escape").onclick = null;
   }
 
+  // 何も選んでいないとき、脱出口の隅に自分の青コマがいれば「今ターン脱出できる」と知らせる
+  if (!selectedPiece) {
+    let readyCount = 0;
+    activePieces().forEach((p) => {
+      if (p.owner === viewer && p.color === "blue" && isEscapeSquareFor(viewer, p.row, p.col)) {
+        cells[p.row][p.col].classList.add("escape-ready");
+        readyCount++;
+      }
+    });
+    if (readyCount > 0) {
+      $("play-message").textContent = "🏁 脱出できるコマがあります！そのコマをタップ→脱出！";
+    }
+  }
+
   renderCaptured();
 }
 
@@ -388,7 +402,7 @@ function legalMoves(piece) {
     if (occupant && occupant.owner === piece.owner) continue; // 味方の上には進めない
     moves.push({ row: r, col: c, capture: !!occupant });
   }
-  // 脱出: 自分の青で、相手陣の隅にいる場合
+  // 脱出: 自分の青で、相手陣の隅にいる場合（隅に着いた次の自分のターンで脱出できる＝本家ルール）
   if (piece.color === "blue" && isEscapeSquareFor(piece.owner, piece.row, piece.col)) {
     moves.push({ escape: true });
   }
